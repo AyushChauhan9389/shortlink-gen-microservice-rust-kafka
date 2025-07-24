@@ -4,3 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+actix-web = "4.11.0"
+dotenvy = "0.15.7"
+sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono"] }
+tokio = { version = "1.46.1", features = ["full"] }
+shared = { path = "../shared" }
+jsonwebtoken = "9.3.1"
+uuid = "1.17.0"
+futures-util = "0.3.31"
+serde_json = "1.0.141"
