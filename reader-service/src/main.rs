@@ -1,4 +1,4 @@
-use actix_web::{web, get, App, HttpServer, HttpResponse, Responder, FromRequest, HttpRequest};
+use actix_web::{get, middleware, web, App, FromRequest, HttpRequest, HttpResponse, HttpServer, Responder};
 use actix_web::dev::Payload;
 use futures_util::future::{Ready, ok, err};
 use dotenvy::dotenv;
@@ -72,16 +72,22 @@ async fn get_user_links(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
+        env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
     let pool = PgPoolOptions::new().connect(&database_url).await.expect("Failed to create pool.");
     let state = web::Data::new(AppState { db: pool, jwt_secret });
 
-    println!("Reader service running on http://localhost:8080");
+    log::info!("Reader service running on http://localhost:8080");
     HttpServer::new(move || {
-        App::new().app_data(state.clone()).service(redirect).service(get_user_links)
+        App::new()
+            .app_data(state.clone())
+            .wrap(middleware::Logger::default())
+            .service(redirect)
+            .service(get_user_links)
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", 8080))?
     .run()
     .await
 }

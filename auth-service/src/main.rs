@@ -1,4 +1,4 @@
-use actix_web::{web, post, App, HttpServer, HttpResponse, Responder};
+use actix_web::{middleware, post, web, App, HttpResponse, HttpServer, Responder};
 use argon2::password_hash::rand_core::OsRng;
 use dotenvy::dotenv;
 use sqlx::postgres::{PgPool, PgPoolOptions};
@@ -78,6 +78,7 @@ async fn login(state: web::Data<AppState>, req: web::Json<AuthRequest>) -> impl 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
@@ -85,14 +86,15 @@ async fn main() -> std::io::Result<()> {
     let pool = PgPoolOptions::new().connect(&database_url).await.expect("Failed to connect to Postgres");
     let state = web::Data::new(AppState{db: pool, jwt_secret});
 
-    println!("Starting Auth Service on port 8082");
+    log::info!("Starting Auth Service on port 8082");
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
+            .wrap(middleware::Logger::default())
             .service(register)
             .service(login)
     })
-        .bind(("127.0.0.1", 8082))?
+        .bind(("0.0.0.0", 8082))?
         .run()
         .await
     

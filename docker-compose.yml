@@ -1,4 +1,50 @@
 services:
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://user:password@postgres:5432/url_shortener
+    networks:
+      - app-network
+
+  writer-service:
+    build:
+      context: .
+      dockerfile: writer-service/Dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+      - kafka
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://user:password@postgres:5432/url_shortener
+    networks:
+      - app-network
+
+  reader-service:
+    build:
+      context: .
+      dockerfile: reader-service/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://user:password@postgres:5432/url_shortener
+    networks:
+      - app-network
+
   kafka:
     image: bitnami/kafka:latest
     ports:

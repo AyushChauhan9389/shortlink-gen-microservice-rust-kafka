@@ -1,6 +1,6 @@
 use std::{env, time::Duration};
 
-use actix_web::{ dev::Payload, post, web, App, FromRequest, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_web::{ dev::Payload, middleware, post, web, App, FromRequest, HttpRequest, HttpResponse, HttpServer, Responder};
 use dotenvy::dotenv;
 use futures_util::future::{Ready, ok, err};
 use jsonwebtoken::{decode, DecodingKey, Validation};
@@ -84,6 +84,8 @@ async fn create_short_link(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
 
@@ -98,11 +100,13 @@ async fn main() -> std::io::Result<()> {
 
     let state = web::Data::new(AppState{db: pool, producer, jwt_secret});
 
-    println!("Writer Service running on port 8081");
+    log::info!("Writer Service running on port 8081");
     HttpServer::new(move || {
-        App::new().app_data(state.clone()).service(create_short_link)
+        App::new().app_data(state.clone())
+            .wrap(middleware::Logger::default())
+            .service(create_short_link)
     })
-    .bind(("127.0.0.1", 8081))?
+    .bind(("0.0.0.0", 8081))?
     .run()
     .await
 }
