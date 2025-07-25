@@ -41,7 +41,10 @@ async fn register(state: web::Data<AppState>, req: web::Json<AuthRequest>) -> im
 
     match result {
         Ok(_) => HttpResponse::Created().json(serde_json::json!({"user_id": user_id, "username": req.username.clone()})),
-        Err(_) => HttpResponse::Conflict().body("Username already exists"),
+        Err(e) => {
+            log::error!("Error registering user: {}", e);
+            HttpResponse::Conflict().body("Username already exists")
+        }
     }
 }
 

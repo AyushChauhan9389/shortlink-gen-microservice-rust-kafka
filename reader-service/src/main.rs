@@ -55,7 +55,7 @@ async fn redirect(state: web::Data<AppState>, path: web::Path<String>) -> impl R
     }
 }
 
-#[get("/links")]
+#[get("/get/links")]
 async fn get_user_links(
     state: web::Data<AppState>,
     user: AuthenticatedUser
